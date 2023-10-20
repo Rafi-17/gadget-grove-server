@@ -32,6 +32,7 @@ async function run() {
     await client.connect();
 
     const productCollections= client.db('productDB').collection('product');
+    const cartCollections= client.db('productDB').collection('cart');
 
     app.get('/products', async(req,res)=>{
         const cursor =  productCollections.find()
@@ -47,25 +48,60 @@ async function run() {
         const result= await cursor.toArray();
         res.send(result);
     })
-    // app.get('/products/:brand', async (req, res) => {
-    //     const { brand } = req.params;
-    
-    //     try {
-    //         // Fetch products from the database where brand matches the URL parameter
-    //         const cursor = productCollections.find({ brand: brand });
-    //         const result = await cursor.toArray();
-    //         console.log(result);
-    //         res.send(result);
-    //     } catch (error) {
-    //         console.error('Error fetching products:', error);
-    //         res.status(500).json({ error: 'Internal Server Error' });
-    //     }
-    // });
+    app.get('/products/:brand/:id', async(req,res)=>{
+        const id = req.params.id;
+        // const query= {brand: brand}
+        // const cursor=  productCollections.find(query);
+        // const result= await cursor.toArray
+        // const id= req.params.id;
+        const query= {_id: new ObjectId(id)};
+        const cursor= productCollections.find(query);
+        const result= await cursor.toArray();
+        res.send(result);
+    })
+    app.put('/products/:brand/:id', async(req,res)=>{
+        const id= req.params.id;
+        const product= req.body;
+        const filter= {_id: new ObjectId(id)}
+        const options={upsert: true}
+        const updateProduct={
+            $set:{
+                name: product.name,
+                brand: product.brand,
+                type: product.type,
+                photo: product.photo,
+                category: product.category,
+                price: product.price,
+                rating: product.rating,
+            }
+        }
+        const result= await productCollections.updateOne(filter,updateProduct,options)
+        res.send(result);
+    })
     app.post('/products', async(req, res) => {
         const product= req.body;
         const result= await productCollections.insertOne(product);
         res.send(result);
     })
+
+    // cart collection
+    app.get('/cart', async (req, res) => {
+        const cursor= cartCollections.find();
+        const result= await cursor.toArray();
+        res.send(result);
+      })
+    app.post('/cart',async(req, res)=>{
+        const product= req.body;
+        const result= await cartCollections.insertOne(product);
+        res.send(result);
+      })
+      app.delete('/cart/:id',async(req, res)=>{
+        const id= req.params.id;
+        const query= {_id: new ObjectId(id)}
+        const result = await cartCollections.deleteOne(query)
+        res.send(result);
+      })
+
 
 
 
